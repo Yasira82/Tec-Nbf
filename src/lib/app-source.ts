@@ -8,4 +8,4 @@
 // ⚠️ New app: set this ONCE (and set the matching `PI_API_KEY_<SOURCE>` on
 // tec-payment-service). Leaving it as 'app' makes Mode-2 approve fail with Pi 404
 // `payment_not_found` — the July 2026 System incident (KB C-12 §11).
-export const APP_SOURCE = 'app';
+export const APP_SOURCE = 'nbf';

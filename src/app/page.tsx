@@ -13,9 +13,9 @@ const httpOr = (raw: string | undefined, fallback: string): string =>
   raw && /^https?:\/\//i.test(raw) ? raw.replace(/\/+$/, '') : fallback;
 
 const HUB_URL    = httpOr(process.env.NEXT_PUBLIC_HUB_URL, 'https://hub.tecosystem.app');
-const APP_URL    = httpOr(process.env.NEXT_PUBLIC_APP_URL, 'https://app.tecosystem.app');
-const APP_NAME   = process.env.NEXT_PUBLIC_APP_NAME   ?? 'TEC App';
-const APP_EMOJI  = process.env.NEXT_PUBLIC_APP_EMOJI  ?? '🔷';
+const APP_URL    = httpOr(process.env.NEXT_PUBLIC_APP_URL, 'https://nbf.tecosystem.app');
+const APP_NAME   = process.env.NEXT_PUBLIC_APP_NAME   ?? 'TEC NBF';
+const APP_EMOJI  = process.env.NEXT_PUBLIC_APP_EMOJI  ?? '🏢';
 
 export default function HomePage() {
   const { isAuthenticated, isLoading } = usePiAuth();
