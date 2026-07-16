@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import '@/styles/tec-design-tokens.css';
 
 export const metadata: Metadata = {
-  title:       'TEC Domain',
-  description: 'TEC Ecosystem — Pi Network Super App',
+  title:       'TEC NBF — Business Foundation Runtime',
+  description: 'TEC NBF — establish and verify your Pi business identity in 25 minutes (read-only preview).',
 };
 
 export default function RootLayout({
