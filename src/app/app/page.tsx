@@ -5,14 +5,34 @@
 // it coordinates the owning apps (Zone verifies, Commerce sells) and graduates
 // into Titan at scale. It never verifies, transacts, or holds capital.
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { TEC_COLORS } from '@yasser172/tec-ui';
 import {
   TEMPLATES, SAMPLE_BUSINESS, LAUNCH_STEPS, STATUS_META, GRADUATION_THRESHOLDS,
+  type BusinessProfile,
 } from '@/lib/nbf/business';
 import NbfPro from './components/NbfPro';
 
 export default function NbfHome() {
-  const b = SAMPLE_BUSINESS;
+  // Start from the curated sample (renders instantly / SSR); replaced by the
+  // caller's OWN live business once the BFF responds (identity from the session,
+  // never a param — the BFF derives it). Falls back to the sample if none exists.
+  const [b, setB]           = useState<BusinessProfile>(SAMPLE_BUSINESS);
+  const [source, setSource] = useState<'sample' | 'live'>('sample');
+
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/bff/nbf/business', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!alive || !d?.business) return;
+        setB(d.business as BusinessProfile);
+        setSource(d.source === 'live' ? 'live' : 'sample');
+      })
+      .catch(() => { /* keep the sample */ });
+    return () => { alive = false; };
+  }, []);
+
   const s = STATUS_META[b.status];
   return (
     <main style={{ minHeight: '100vh', background: TEC_COLORS.bg, color: '#e7e7ea', padding: '32px 22px', fontFamily: 'system-ui, sans-serif' }}>
@@ -53,8 +73,13 @@ export default function NbfHome() {
           ))}
         </div>
 
-        {/* Sample business + graduation */}
-        <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginTop: 28, marginBottom: 12 }}>Example business</h2>
+        {/* Business + graduation (own profile when live, sample otherwise) */}
+        <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginTop: 28, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+          {source === 'live' ? 'Your business' : 'Example business'}
+          <span style={{ fontSize: 11, fontWeight: 400, color: source === 'live' ? '#22C55E' : TEC_COLORS.gold, border: `1px solid ${(source === 'live' ? '#22C55E' : TEC_COLORS.gold)}55`, borderRadius: 999, padding: '2px 10px' }}>
+            {source === 'live' ? 'live' : 'sample'}
+          </span>
+        </h2>
         <div style={{ padding: 18, background: TEC_COLORS.surface, borderRadius: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <div>
@@ -77,7 +102,7 @@ export default function NbfHome() {
         <p style={{ opacity: 0.55, fontSize: 12, marginTop: 20, lineHeight: 1.6, borderLeft: `2px solid ${TEC_COLORS.gold}55`, paddingLeft: 12 }}>
           <strong>Boundary (C-124).</strong> NBF establishes the business identity. Verification is minted by
           Zone (presented here), transactions by Commerce/payment-service, capital by FundX, reputation by
-          Legend — NBF coordinates them by ID. A business graduates into Titan (C-130) at scale. Read-only sample.
+          Legend — NBF coordinates them by ID. A business graduates into Titan (C-130) at scale.{source === 'live' ? '' : ' Read-only sample.'}
         </p>
 
         {/* NBF Pro */}
