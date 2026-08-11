@@ -59,4 +59,28 @@ const nextConfig = {
   },
 };
 
+// --- TEC-TESTNET-VERIFY (Pi Testnet domain verification, per-host validation key) ---
+nextConfig.rewrites = async () => ({
+  beforeFiles: [
+    {
+      source: '/validation-key.txt',
+      has: [{ type: 'host', value: '.*\\.vercel\\.app(:\\d+)?' }],
+      destination: '/validation-key-testnet.txt',
+    },
+  ],
+  afterFiles: [],
+  fallback: [],
+});
+
+const __tecOrigHeaders =
+  typeof nextConfig.headers === 'function' ? nextConfig.headers.bind(nextConfig) : null;
+nextConfig.headers = async () => {
+  const base = __tecOrigHeaders ? await __tecOrigHeaders() : [];
+  return [
+    ...base,
+    { source: '/validation-key.txt', headers: [{ key: 'Cache-Control', value: 'no-store, max-age=0' }] },
+  ];
+};
+// --- end TEC-TESTNET-VERIFY ---
+
 module.exports = nextConfig;
