@@ -21,6 +21,7 @@ export default function NbfPro() {
   // Reflect the real subscription (activated by commerce-service when a Pro payment
   // completes). Pro ONLY while the period is live — no auto-renewal / no downgrade job.
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
   useEffect(() => {
     fetch('/api/bff/subscription', { credentials: 'include', cache: 'no-store' })
       .then((r) => r.json()).catch(() => ({}))
@@ -31,6 +32,12 @@ export default function NbfPro() {
         const live = s.isActive !== false && !(s.isExpired === true || (end !== null && end.getTime() < Date.now()));
         const plan = String(s.plan ?? '').toUpperCase();
         setIsSubscribed(live && (plan === 'PRO' || plan === 'ENTERPRISE'));
+        // Renewal signal (Pi Pro is one-time, no auto-renewal) — commerce sends
+        // daysRemaining; fall back to the period end. Drives a re-subscribe nudge.
+        const days = typeof s.daysRemaining === 'number'
+          ? s.daysRemaining
+          : end ? Math.max(0, Math.ceil((end.getTime() - Date.now()) / 86400000)) : null;
+        setDaysRemaining(days);
       })
       .catch(() => {});
   }, []);
@@ -75,6 +82,11 @@ export default function NbfPro() {
         <div style={{ fontSize: 12, color: TEC_COLORS.subtext, marginTop: 6 }}>
           Your subscription is active. Thanks for supporting TEC.
         </div>
+        {typeof daysRemaining === 'number' && (
+          <div style={{ fontSize: 12, fontWeight: daysRemaining <= 7 ? 700 : 600, color: daysRemaining <= 7 ? TEC_COLORS.gold : TEC_COLORS.subtext, marginTop: 8 }}>
+            {daysRemaining <= 7 ? '⏳ ' : ''}Expires in {daysRemaining} day{daysRemaining === 1 ? '' : 's'}{daysRemaining <= 7 ? ' — re-subscribe to keep Pro (one-time monthly, no auto-renewal).' : '.'}
+          </div>
+        )}
       </div>
     );
   }

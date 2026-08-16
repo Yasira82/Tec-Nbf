@@ -12,16 +12,21 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { TEC_COLORS } from '@yasser172/tec-ui';
+import { useTranslation } from '@/lib/i18n';
 import {
   TEMPLATES, LAUNCH_STEPS, STATUS_META, GRADUATION_THRESHOLDS,
   type BusinessProfile, type BusinessType,
 } from '@/lib/nbf/business';
 import { buildHeaders } from '@/lib/request-id';
 import NbfPro from './components/NbfPro';
+import { BottomNav, type NbfTab } from './components/BottomNav';
+import { SettingsView } from './components/SettingsView';
 
 type Source = 'live' | 'empty' | 'sample' | 'loading';
 
 export default function NbfHome() {
+  const { t } = useTranslation();
+  const [tab, setTab] = useState<NbfTab>('home');
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
   const [source, setSource]     = useState<Source>('loading');
 
@@ -99,109 +104,127 @@ export default function NbfHome() {
 
   const hasOwn = source === 'live' && business;
 
+  const headerTitle =
+    tab === 'templates' ? t.nbf.nav.templates
+    : tab === 'pro' ? t.nbf.nav.pro
+    : tab === 'settings' ? t.nbf.nav.settings
+    : t.nbf.brand;
+
   return (
-    <main style={{ minHeight: '100vh', background: TEC_COLORS.bg, color: '#e7e7ea', padding: '32px 22px', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <main style={{ minHeight: '100vh', background: TEC_COLORS.bg, color: '#e7e7ea', fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 22px calc(96px + env(safe-area-inset-bottom))' }}>
         <header style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 34 }}>🏢</div>
-          <h1 style={{ color: TEC_COLORS.gold, margin: '4px 0 2px', fontSize: 26 }}>TEC NBF</h1>
-          <p style={{ opacity: 0.7, margin: 0, fontSize: 14 }}>
-            Business Foundation Runtime — from &ldquo;I have an idea&rdquo; to a verified Pi business in 25 minutes.
-          </p>
+          <h1 style={{ color: TEC_COLORS.gold, margin: '4px 0 2px', fontSize: 26 }}>{headerTitle}</h1>
+          {tab === 'home' && (
+            <p style={{ opacity: 0.7, margin: 0, fontSize: 14 }}>{t.nbf.tagline}</p>
+          )}
         </header>
 
-        {/* ── Your business (live) OR establish form ─────────────── */}
-        {hasOwn ? (
-          <section style={{ marginTop: 20 }}>
-            <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginBottom: 12 }}>Your business</h2>
-            <OwnBusinessCard business={business!} busy={busy} onPublish={handlePublish} error={error} />
-          </section>
-        ) : (
-          <section style={{ marginTop: 20 }}>
-            <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginBottom: 12 }}>Establish your business</h2>
-            <form onSubmit={handleCreate} style={{ padding: 18, background: TEC_COLORS.surface, borderRadius: 12, display: 'grid', gap: 12 }}>
-              <label style={{ display: 'grid', gap: 5 }}>
-                <span style={{ fontSize: 12.5, opacity: 0.75 }}>Business name</span>
-                <input
-                  value={name} onChange={(e) => setName(e.target.value)}
-                  required minLength={2} maxLength={80} placeholder="e.g. Pi Corner Store"
-                  style={inputStyle}
-                />
-              </label>
-              <label style={{ display: 'grid', gap: 5 }}>
-                <span style={{ fontSize: 12.5, opacity: 0.75 }}>Type</span>
-                <select value={type} onChange={(e) => setType(e.target.value as BusinessType)} style={inputStyle}>
-                  {TEMPLATES.map((t) => (
-                    <option key={t.type} value={t.type}>{t.icon} {t.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ display: 'grid', gap: 5 }}>
-                <span style={{ fontSize: 12.5, opacity: 0.75 }}>Tagline <span style={{ opacity: 0.5 }}>(optional)</span></span>
-                <input
-                  value={tagline} onChange={(e) => setTagline(e.target.value)}
-                  maxLength={140} placeholder="Everyday goods, paid in Pi."
-                  style={inputStyle}
-                />
-              </label>
-              {error && <div style={{ color: '#EF4444', fontSize: 12.5 }}>{error}</div>}
-              <button type="submit" disabled={busy || name.trim().length < 2} style={primaryBtn(busy || name.trim().length < 2)}>
-                {busy ? 'Establishing…' : 'Establish business (Draft)'}
-              </button>
-              <p style={{ opacity: 0.55, fontSize: 11.5, margin: 0 }}>
-                Starts as a <strong>Draft</strong>. Verification is issued by Zone (not here); your business
-                appears in Explorer and can sell via Commerce once launched.
-              </p>
-            </form>
-          </section>
-        )}
+        {/* ── HOME ────────────────────────────────────────────────── */}
+        {tab === 'home' && (<>
+          {/* Your business (live) OR establish form */}
+          {hasOwn ? (
+            <section style={{ marginTop: 20 }}>
+              <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginBottom: 12 }}>Your business</h2>
+              <OwnBusinessCard business={business!} busy={busy} onPublish={handlePublish} error={error} />
+            </section>
+          ) : (
+            <section style={{ marginTop: 20 }}>
+              <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginBottom: 12 }}>Establish your business</h2>
+              <form onSubmit={handleCreate} style={{ padding: 18, background: TEC_COLORS.surface, borderRadius: 12, display: 'grid', gap: 12 }}>
+                <label style={{ display: 'grid', gap: 5 }}>
+                  <span style={{ fontSize: 12.5, opacity: 0.75 }}>Business name</span>
+                  <input
+                    value={name} onChange={(e) => setName(e.target.value)}
+                    required minLength={2} maxLength={80} placeholder="e.g. Pi Corner Store"
+                    style={inputStyle}
+                  />
+                </label>
+                <label style={{ display: 'grid', gap: 5 }}>
+                  <span style={{ fontSize: 12.5, opacity: 0.75 }}>Type</span>
+                  <select value={type} onChange={(e) => setType(e.target.value as BusinessType)} style={inputStyle}>
+                    {TEMPLATES.map((tpl) => (
+                      <option key={tpl.type} value={tpl.type}>{tpl.icon} {tpl.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: 'grid', gap: 5 }}>
+                  <span style={{ fontSize: 12.5, opacity: 0.75 }}>Tagline <span style={{ opacity: 0.5 }}>(optional)</span></span>
+                  <input
+                    value={tagline} onChange={(e) => setTagline(e.target.value)}
+                    maxLength={140} placeholder="Everyday goods, paid in Pi."
+                    style={inputStyle}
+                  />
+                </label>
+                {error && <div style={{ color: '#EF4444', fontSize: 12.5 }}>{error}</div>}
+                <button type="submit" disabled={busy || name.trim().length < 2} style={primaryBtn(busy || name.trim().length < 2)}>
+                  {busy ? 'Establishing…' : 'Establish business (Draft)'}
+                </button>
+                <p style={{ opacity: 0.55, fontSize: 11.5, margin: 0 }}>
+                  Starts as a <strong>Draft</strong>. Verification is issued by Zone (not here); your business
+                  appears in Explorer and can sell via Commerce once launched.
+                </p>
+              </form>
+            </section>
+          )}
 
-        {/* Launch funnel */}
-        <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginTop: 28, marginBottom: 10 }}>The 25-minute launch</h2>
-        <div style={{ display: 'grid', gap: 8 }}>
-          {LAUNCH_STEPS.map((step, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 14px', background: TEC_COLORS.surface, borderRadius: 10 }}>
-              <span style={{ width: 22, height: 22, borderRadius: 11, background: TEC_COLORS.goldDark, color: '#020205', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 13.5 }}>{step.title} {step.minutes > 0 && <span style={{ opacity: 0.5, fontWeight: 400 }}>· {step.minutes}m</span>}</div>
-                <div style={{ opacity: 0.6, fontSize: 12 }}>{step.note}</div>
+          {/* Launch funnel */}
+          <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginTop: 28, marginBottom: 10 }}>The 25-minute launch</h2>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {LAUNCH_STEPS.map((step, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 14px', background: TEC_COLORS.surface, borderRadius: 10 }}>
+                <span style={{ width: 22, height: 22, borderRadius: 11, background: TEC_COLORS.goldDark, color: '#020205', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13.5 }}>{step.title} {step.minutes > 0 && <span style={{ opacity: 0.5, fontWeight: 400 }}>· {step.minutes}m</span>}</div>
+                  <div style={{ opacity: 0.6, fontSize: 12 }}>{step.note}</div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* Templates */}
-        <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginTop: 28, marginBottom: 12 }}>Business templates</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
-          {TEMPLATES.map((t) => (
-            <Link key={t.type} href={`/template/${t.type}`} style={{ textDecoration: 'none' }}>
-              <div style={{ padding: 14, background: TEC_COLORS.surface, borderRadius: 12, border: '1px solid #ffffff10', height: '100%' }}>
-                <div style={{ fontSize: 20 }}>{t.icon}</div>
-                <div style={{ color: '#e7e7ea', fontWeight: 700, marginTop: 8 }}>{t.label}</div>
-                <div style={{ opacity: 0.65, fontSize: 12, marginTop: 5, lineHeight: 1.5 }}>{t.description}</div>
-              </div>
-            </Link>
-          ))}
-        </div>
+          <p style={{ opacity: 0.55, fontSize: 12, marginTop: 20, lineHeight: 1.6, borderLeft: `2px solid ${TEC_COLORS.gold}55`, paddingLeft: 12 }}>
+            <strong>Boundary.</strong> NBF establishes the business identity. Verification is minted by
+            Zone (presented here), transactions by Commerce/payment-service, capital by FundX, reputation by
+            Legend — NBF coordinates them by ID. A business graduates into Titan at scale.
+          </p>
+        </>)}
 
-        {/* Curated example (only when the caller has no business of their own) */}
-        {!hasOwn && business && (
-          <>
-            <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginTop: 28, marginBottom: 12 }}>Example business</h2>
-            <OwnBusinessCard business={business} busy={false} readOnly />
-          </>
-        )}
+        {/* ── TEMPLATES ───────────────────────────────────────────── */}
+        {tab === 'templates' && (<>
+          <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginTop: 12, marginBottom: 12 }}>{t.nbf.businessTemplates}</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+            {TEMPLATES.map((tpl) => (
+              <Link key={tpl.type} href={`/template/${tpl.type}`} style={{ textDecoration: 'none' }}>
+                <div style={{ padding: 14, background: TEC_COLORS.surface, borderRadius: 12, border: '1px solid #ffffff10', height: '100%' }}>
+                  <div style={{ fontSize: 20 }}>{tpl.icon}</div>
+                  <div style={{ color: '#e7e7ea', fontWeight: 700, marginTop: 8 }}>{tpl.label}</div>
+                  <div style={{ opacity: 0.65, fontSize: 12, marginTop: 5, lineHeight: 1.5 }}>{tpl.description}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
 
-        <p style={{ opacity: 0.55, fontSize: 12, marginTop: 20, lineHeight: 1.6, borderLeft: `2px solid ${TEC_COLORS.gold}55`, paddingLeft: 12 }}>
-          <strong>Boundary (C-124).</strong> NBF establishes the business identity. Verification is minted by
-          Zone (presented here), transactions by Commerce/payment-service, capital by FundX, reputation by
-          Legend — NBF coordinates them by ID. A business graduates into Titan (C-130) at scale.
-        </p>
+          {/* Curated example (only when the caller has no business of their own) */}
+          {!hasOwn && business && (
+            <>
+              <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginTop: 28, marginBottom: 12 }}>Example business</h2>
+              <OwnBusinessCard business={business} busy={false} readOnly />
+            </>
+          )}
+        </>)}
 
-        {/* NBF Pro */}
-        <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginTop: 32, marginBottom: 12 }}>Upgrade</h2>
-        <NbfPro />
+        {/* ── PRO ─────────────────────────────────────────────────── */}
+        {tab === 'pro' && (<>
+          <h2 style={{ color: TEC_COLORS.gold, fontSize: 16, marginTop: 12, marginBottom: 12 }}>{t.nbf.upgrade}</h2>
+          <NbfPro />
+        </>)}
+
+        {/* ── SETTINGS ────────────────────────────────────────────── */}
+        {tab === 'settings' && <SettingsView />}
       </div>
+
+      <BottomNav active={tab} onSelect={setTab} />
     </main>
   );
 }

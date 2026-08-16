@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { LocaleProvider } from '@/lib/i18n';
 import '@/styles/tec-design-tokens.css';
 
 export const metadata: Metadata = {
@@ -58,7 +59,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>{children}</body>
+      <body><LocaleProvider>{children}</LocaleProvider></body>
     </html>
   );
 }
