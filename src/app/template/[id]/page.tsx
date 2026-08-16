@@ -36,7 +36,7 @@ export default async function TemplateDetail({ params }: { params: Promise<{ id:
 
         <p style={{ marginTop: 20, fontSize: 12, opacity: 0.55, lineHeight: 1.6, borderLeft: `2px solid ${TEC_COLORS.gold}55`, paddingLeft: 12 }}>
           Verification is issued by Zone (NBF presents the badge, never mints it); products list in Commerce;
-          the business graduates into Titan at scale (C-124 → C-130). Read-only sample.
+          the business graduates into Titan at scale. Read-only sample.
         </p>
       </div>
     </main>
