@@ -174,7 +174,7 @@ export default function NbfHome() {
           <div style={{ display: 'grid', gap: 8 }}>
             {LAUNCH_STEPS.map((step, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 14px', background: TEC_COLORS.surface, borderRadius: 10 }}>
-                <span style={{ width: 22, height: 22, borderRadius: 11, background: TEC_COLORS.goldDark, color: '#020205', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                <span style={{ width: 22, height: 22, borderRadius: 11, background: TEC_COLORS.goldDark, color: '#050816', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 13.5 }}>{step.title} {step.minutes > 0 && <span style={{ opacity: 0.5, fontWeight: 400 }}>· {step.minutes}m</span>}</div>
                   <div style={{ opacity: 0.6, fontSize: 12 }}>{step.note}</div>
@@ -281,6 +281,6 @@ const inputStyle: React.CSSProperties = {
 
 const primaryBtn = (disabled: boolean): React.CSSProperties => ({
   padding: '11px 16px', borderRadius: 9, border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
-  background: disabled ? '#ffffff1a' : TEC_COLORS.goldDark, color: disabled ? '#9ca3af' : '#020205',
+  background: disabled ? '#ffffff1a' : TEC_COLORS.goldDark, color: disabled ? '#9ca3af' : '#050816',
   fontWeight: 800, fontSize: 13.5, width: '100%',
 });
