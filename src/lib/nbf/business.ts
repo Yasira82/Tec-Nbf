@@ -81,7 +81,7 @@ export const STATUS_META: Record<BusinessStatus, { label: string; tone: string }
   DRAFT:     { label: 'Draft',     tone: '#8B5CF6' },
   ACTIVE:    { label: 'Active',    tone: '#3B82F6' },
   VERIFIED:  { label: 'Verified',  tone: '#22C55E' },
-  GRADUATED: { label: 'Graduated → Titan', tone: '#FBBF24' },
+  GRADUATED: { label: 'Graduated → Titan', tone: '#FBB44A' },
 };
 
 // Graduation trigger (C-124 → Titan C-130): any threshold exceeded.
