@@ -33,7 +33,7 @@ gate). Real business creation is Phase 2 (needs Zone + Commerce live). Not deplo
 |-------|-------|
 | **App** | TEC NBF |
 | **Domain** | `https://nbf.tecosystem.app` |
-| **Pi App ID** | ⏳ TBD — register at Pi Developer Portal · then Vercel `NEXT_PUBLIC_PI_APP_ID` |
+| **Pi App ID** | ✅ Registered (Mainnet) · Vercel `NEXT_PUBLIC_PI_APP_ID` |
 | **APP_SOURCE slug** | `nbf` (payment-service resolves `PI_API_KEY_NBF`) — set in `src/lib/app-source.ts` |
 | **PI_SANDBOX** | `false` (Mainnet) |
 
@@ -130,13 +130,13 @@ NBF V0/V1 — Business Foundation preview (customized from template):
      graduation-to-Titan check + NBF Pro (real Pi U2A)
   ✅ /template/[id] detail + BFF /api/bff/nbf/business (sample, read-only)
 
-Next (before live):
-  □ Register Pi App ID (Pi Developer Portal) → Vercel NEXT_PUBLIC_PI_APP_ID +
+Live on Mainnet — all complete (SSoT: architecture/app-fleet.yaml):
+  ✅ Register Pi App ID (Pi Developer Portal) → Vercel NEXT_PUBLIC_PI_APP_ID +
     API_GATEWAY_URL · INTERNAL_SECRET · SSO_SECRET · NEXT_PUBLIC_HUB_URL=https://hub.tecosystem.app · PI_SANDBOX=false.
-  □ payment-service: set PI_API_KEY_NBF on Railway (approve→502 otherwise, C-12 §11).
-  □ Hub SSO: add nbf.tecosystem.app + tec-nbf.vercel.app to Hub /api/auth/sso
+  ✅ payment-service: set PI_API_KEY_NBF on Railway (approve→502 otherwise, C-12 §11).
+  ✅ Hub SSO: add nbf.tecosystem.app + tec-nbf.vercel.app to Hub /api/auth/sso
     ALLOWED_TARGETS + Hub domain registry.
-  □ Deploy (Vercel) + runtime-verify login (C-123) + a real NBF Pro payment
+  ✅ Deploy (Vercel) + runtime-verify login (C-123) + a real NBF Pro payment
     Mode 1 (Hub) AND Mode 2 (standalone).
 
 NBF V1+ (post-Portal — C-124): real business profile creation (STORE + SERVICE +
