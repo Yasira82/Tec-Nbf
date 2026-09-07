@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify }                 from 'jose';
+import { cookieDomainFor }           from '@/lib/cookie-domain';
 
 // Hub SSO landing — C-123 compliant (Pi Browser Session & Cookie Spec):
 //   LAW 2: Set-Cookie on 3xx responses is dropped by Pi Browser → cookies are
@@ -65,8 +66,12 @@ export async function GET(req: NextRequest) {
 
   const csrf = crypto.randomUUID();
 
-  const cookieDomain =
-    process.env.COOKIE_DOMAIN ?? process.env.NEXT_PUBLIC_SSO_DOMAIN ?? undefined;
+  // Host-only wherever the configured domain does not cover this host — see
+  // cookie-domain.ts. A Domain the host is not under is rejected silently.
+  const cookieDomain = cookieDomainFor(
+    req.nextUrl.hostname,
+    process.env.COOKIE_DOMAIN ?? process.env.NEXT_PUBLIC_SSO_DOMAIN ?? undefined,
+  );
   const cookieOpts = {
     httpOnly:    false,
     secure:      true,
