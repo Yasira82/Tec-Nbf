@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify }                 from 'jose';
+import { cookieDomainFor }           from '@/lib/cookie-domain';
 
 // Hub SSO landing — C-123 compliant (Pi Browser Session & Cookie Spec):
 //   LAW 2: Set-Cookie on 3xx responses is dropped by Pi Browser → cookies are
@@ -8,6 +9,11 @@ import { jwtVerify }                 from 'jose';
 //   §3:    VERIFIED ENTRY — the landing script confirms the session is
 //          server-visible (/api/auth/me) BEFORE navigating into the app.
 const ALLOWED_AUDIENCES = [
+  // NBF's REAL Vercel host. The project name `tec-nbf` was taken, and Vercel
+  // appends an arbitrary word — it is not derivable from the app's name, only
+  // read off the deployment (Zone got `-mu`, Elite `-bvzb`, Commerce no `tec-`
+  // prefix at all). This is the host registered in the Pi Portal.
+  'https://nbf-ivory.vercel.app',
   'https://tec-nbf.vercel.app',
   'https://nbf.tecosystem.app',
 ];
@@ -65,8 +71,12 @@ export async function GET(req: NextRequest) {
 
   const csrf = crypto.randomUUID();
 
-  const cookieDomain =
-    process.env.COOKIE_DOMAIN ?? process.env.NEXT_PUBLIC_SSO_DOMAIN ?? undefined;
+  // Host-only wherever the configured domain does not cover this host — see
+  // cookie-domain.ts. A Domain the host is not under is rejected silently.
+  const cookieDomain = cookieDomainFor(
+    req.nextUrl.hostname,
+    process.env.COOKIE_DOMAIN ?? process.env.NEXT_PUBLIC_SSO_DOMAIN ?? undefined,
+  );
   const cookieOpts = {
     httpOnly:    false,
     secure:      true,
