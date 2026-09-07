@@ -9,6 +9,11 @@ import { cookieDomainFor }           from '@/lib/cookie-domain';
 //   §3:    VERIFIED ENTRY — the landing script confirms the session is
 //          server-visible (/api/auth/me) BEFORE navigating into the app.
 const ALLOWED_AUDIENCES = [
+  // NBF's REAL Vercel host. The project name `tec-nbf` was taken, and Vercel
+  // appends an arbitrary word — it is not derivable from the app's name, only
+  // read off the deployment (Zone got `-mu`, Elite `-bvzb`, Commerce no `tec-`
+  // prefix at all). This is the host registered in the Pi Portal.
+  'https://nbf-ivory.vercel.app',
   'https://tec-nbf.vercel.app',
   'https://nbf.tecosystem.app',
 ];
