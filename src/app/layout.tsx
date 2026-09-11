@@ -68,7 +68,8 @@ export default function RootLayout({
                     // false; ?pi_sandbox=1 is the way back in, honoured only on
                     // the Testnet host so no query param can put a Mainnet
                     // payment into sandbox mode.
-                    var __isTestnetHost = /\\.vercel\\.app$/i.test(location.hostname);
+                    var __isTestnetHost = /\\.vercel\\.app$/i.test(location.hostname)
+                      || /-test\\.tecosystem\\.app$/i.test(location.hostname);
                     var __q = null;
                     try { __q = new URLSearchParams(location.search).get('pi_sandbox'); } catch (e) {}
                     var __sandbox = __isTestnetHost

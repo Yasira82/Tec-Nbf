@@ -17,6 +17,7 @@ const ALLOWED_AUDIENCES = [
   'https://nbf-ivory.vercel.app',
   'https://tec-nbf.vercel.app',
   'https://nbf.tecosystem.app',
+  'https://nbf-test.tecosystem.app',
 ];
 const DEFAULT_REDIRECT = '/app';
 
