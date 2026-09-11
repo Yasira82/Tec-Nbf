@@ -1,3 +1,4 @@
+import { HUB_HOSTS } from '@/lib/pi-network';
 import type { Metadata } from 'next';
 import { LocaleProvider } from '@/lib/i18n';
 import '@/styles/tec-design-tokens.css';
@@ -32,9 +33,21 @@ export default function RootLayout({
                 // session — never Pi.init() here (it poisons the session and
                 // breaks the Hub PaymentModal). The SSO landing persists the
                 // flag; referrer covers direct hops.
+                //
+                // BOTH Hub hosts. The list is interpolated from
+                // lib/pi-network.ts (HUB_HOSTS) because this script runs before
+                // any module and cannot import — but it must not become a
+                // second, drifting copy of the answer. It named only the
+                // Mainnet Hub, so a hop from the Testnet Hub ran Pi.init() into
+                // a session the Hub owns and every later Pi call went silent.
+                var __hubHosts = ${JSON.stringify(HUB_HOSTS)};
+                var __fromHub = false;
                 try {
-                  if (sessionStorage.getItem('__tec_hub_entry') === '1' ||
-                      document.referrer.toLowerCase().indexOf('hub.tecosystem.app') !== -1) {
+                  __fromHub = !!document.referrer &&
+                    __hubHosts.indexOf(new URL(document.referrer).hostname.toLowerCase()) !== -1;
+                } catch (e) {}
+                try {
+                  if (sessionStorage.getItem('__tec_hub_entry') === '1' || __fromHub) {
                     window.__TEC_PI_FOREIGN_SESSION = true;
                     window.__TEC_PI_READY = true;
                     window.dispatchEvent(new Event('tec-pi-ready'));
