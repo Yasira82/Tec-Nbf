@@ -57,6 +57,22 @@ const resolveIncomplete = async (incomplete: unknown): Promise<void> => {
 let authenticated = false;
 let inFlight: Promise<boolean> | null = null;
 
+/**
+ * Why the last handshake did not succeed.
+ *
+ * `ensureAuth` returns a bare boolean, and it returns false for four unrelated
+ * reasons: a Hub-owned session, no SDK, the circuit breaker being OPEN, and Pi
+ * itself rejecting. The catch below used to be `.catch(() => false)`, which
+ * threw away the ONE sentence that distinguishes them — so every one of the
+ * four reached the user as "Pi auth failed", the message that fits all of them
+ * and helps with none.
+ *
+ * The breaker matters most here. After three failures it stops calling Pi for
+ * 60 seconds and reports OPEN, so tapping again during that window returns a
+ * failure that has nothing to do with the original cause and hides it.
+ */
+let lastError: string | null = null;
+
 /** A Hub-owned session (ADR-007) — authenticating here would never answer. */
 const isForeignSession = (): boolean =>
   typeof window !== 'undefined' &&
@@ -79,18 +95,36 @@ export const piSession = {
    * second concurrent authenticate.
    */
   ensureAuth(): Promise<boolean> {
-    if (this.isAuthenticated) return Promise.resolve(true);
-    if (isForeignSession())   return Promise.resolve(false);
-    if (!PiRuntime.isAvailable()) return Promise.resolve(false);
+    if (this.isAuthenticated) { lastError = null; return Promise.resolve(true); }
+    if (isForeignSession()) {
+      lastError = 'this session belongs to the Hub (ADR-007) — pay from the Hub instead';
+      return Promise.resolve(false);
+    }
+    if (!PiRuntime.isAvailable()) {
+      lastError = 'the Pi SDK is not present on this page';
+      return Promise.resolve(false);
+    }
 
     if (!inFlight) {
       inFlight = PiRuntime
         .authenticate(['username', 'payments'], (p: unknown) => { void resolveIncomplete(p); })
-        .then(() => { authenticated = true;  return true;  })
-        .catch(() => { authenticated = false; return false; })
+        .then(() => { authenticated = true;  lastError = null; return true;  })
+        .catch((err: unknown) => {
+          authenticated = false;
+          // Keep what Pi said. It is the only thing that separates "this app is
+          // not registered for this host" from "the user declined" from "the
+          // breaker is OPEN", and each wants a different fix.
+          lastError = err instanceof Error ? err.message : String(err ?? 'unknown Pi error');
+          return false;
+        })
         .finally(() => { inFlight = null; });
     }
     return inFlight;
+  },
+
+  /** The reason the last `ensureAuth` failed, or null if it succeeded. */
+  get lastAuthError(): string | null {
+    return lastError;
   },
 
   /** Fire-and-forget warm-up. Failure is silent: the tap will simply retry. */

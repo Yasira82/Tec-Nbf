@@ -108,16 +108,32 @@ export const createPaymentRecord = async (
 };
 
 /** Step 2 — run the Pi User-to-App payment (Mode 2 / standalone in Pi Browser). */
+/**
+ * `onStage` reports WHICH step is running.
+ *
+ * Without it a Mode-2 payment shows one message from the tap until it settles,
+ * and that message covers four different waits: the Pi sign-in handshake, the
+ * wallet sheet, our approve call, and chain confirmation. When a payment hangs
+ * — which is the failure this flow actually has — a single label cannot say
+ * which of the four is stuck, so every diagnosis starts as a guess. One tap
+ * with a stage label answers it instead.
+ */
 export const createU2APayment = async (
   amount: number, memo: string, metadata: Record<string, unknown>, internalId: string,
+  onStage?: (stage: string) => void,
 ): Promise<PaymentResult> => {
   return new Promise(async (resolve) => {
+    let stage = 'starting';
+    const at = (s: string, label: string) => { stage = s; onStage?.(label); };
     if (!window.Pi) { resolve({ status: 'error', success: false, message: 'Pi SDK not ready' }); return; }
     if ((window as any).__TEC_PI_FOREIGN_SESSION) { resolve({ status: 'error', success: false, message: 'foreign_session' }); return; }
 
     let settled = false;
     const done = (result: PaymentResult) => { if (settled) return; settled = true; clearTimeout(timer); resolve(result); };
-    const timer = setTimeout(() => done({ status: 'error', success: false, message: 'Payment timed out — please try again.' }), 90_000);
+    const timer = setTimeout(
+      () => done({ status: 'error', success: false, message: `Timed out at: ${stage}. Nothing was charged — please try again.` }),
+      90_000,
+    );
 
     const token = getToken();
     const headers: Record<string, string> = { 'Content-Type': 'application/json', 'x-csrf-token': getCsrfToken() };
@@ -128,16 +144,23 @@ export const createU2APayment = async (
     // gate, not a second call: if a warm-up is still running this JOINS it —
     // two concurrent Pi.authenticate calls are what Pi Browser answers neither
     // of. See lib/pi/pi-session.ts.
+    at('pi-signin', 'Signing in to Pi…');
     if (!(await piSession.ensureAuth())) {
-      done({ status: 'error', success: false, message: 'Pi auth failed — please try again.' });
+      const why = piSession.lastAuthError;
+      done({
+        status: 'error', success: false,
+        message: why ? `Pi sign-in failed: ${why}` : 'Pi sign-in failed — please try again.',
+      });
       return;
     }
 
+    at('pi-wallet', 'Opening the Pi wallet…');
     try {
       window.Pi.createPayment(
         { amount, memo, metadata: { ...metadata, internalId } },
         {
           onReadyForServerApproval: async (piPaymentId: string) => {
+            at('server-approve', 'Approving payment…');
             try {
               const res = await fetch('/api/bff/payment/approve', {
                 method: 'POST', credentials: 'include', headers,
@@ -150,6 +173,7 @@ export const createU2APayment = async (
             } catch (err) { done({ status: 'error', success: false, message: String(err) }); }
           },
           onReadyForServerCompletion: async (piPaymentId: string, txid: string) => {
+            at('server-complete', 'Confirming on the Pi chain…');
             try {
               const res  = await fetch('/api/bff/payment/complete', {
                 method: 'POST', credentials: 'include', headers,
