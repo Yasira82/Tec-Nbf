@@ -28,7 +28,22 @@ export default function HomePage() {
   }, [isLoading, isAuthenticated, router]);
 
   const handleLogin = () => {
-    ssoRedirect(HUB_URL, `${APP_URL}/app`);
+    // Come back to THE HOST THE USER IS ON, not to the canonical domain.
+    //
+    // `APP_URL` is the Mainnet domain. Sending it as the SSO return target means
+    // that signing in on the paired Testnet host (`*.vercel.app`) lands the user
+    // on MAINNET — and from that moment every request is Mainnet: the session,
+    // the subscription read (whose Testnet gate keys off this route's own Host
+    // header, so it never fires), and the payment, which payment-service then
+    // records as `testnet: false` and approves with the Mainnet key. A Test-Pi
+    // wallet cannot pay that, and what the tester sees is a payment that hangs
+    // and a card that says "You're on Pro" on the test network.
+    //
+    // The 18 other apps in the fleet already read the live origin here; this app
+    // and its sibling were built separately and never received the fix.
+    // `APP_URL` stays as the server-side fallback: there is no `window` during
+    // prerender, and a relative return target is not a valid SSO audience.
+    ssoRedirect(HUB_URL, `${typeof window === 'undefined' ? APP_URL : window.location.origin}/app`);
   };
 
   return (
