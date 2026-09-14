@@ -146,7 +146,11 @@ export const createU2APayment = async (
     // of. See lib/pi/pi-session.ts.
     at('pi-signin', 'Signing in to Pi…');
     if (!(await piSession.ensureAuth())) {
-      done({ status: 'error', success: false, message: 'Pi auth failed — please try again.' });
+      const why = piSession.lastAuthError;
+      done({
+        status: 'error', success: false,
+        message: why ? `Pi sign-in failed: ${why}` : 'Pi sign-in failed — please try again.',
+      });
       return;
     }
 
