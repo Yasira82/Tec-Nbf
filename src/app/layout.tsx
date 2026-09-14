@@ -66,8 +66,6 @@ export default function RootLayout({
                     return;
                   }
                   try {
-                    window.Pi.init({
-                      version: '2.0',
                     // SANDBOX IS NOT TESTNET. The HOST decides which Pi APP the
                     // visitor is in (and so which network the server approves
                     // against); "sandbox" points the SDK at Pi's SANDBOX
@@ -86,6 +84,8 @@ export default function RootLayout({
                       ? (__q === '1')
                       : ${process.env.NEXT_PUBLIC_PI_SANDBOX === 'true'};
                     window.__TEC_PI_SANDBOX = __sandbox;
+                    window.Pi.init({
+                      version: '2.0',
                       sandbox: __sandbox,
                     });
                     window.__TEC_PI_READY = true;
