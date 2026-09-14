@@ -13,7 +13,7 @@ import {
   createU2APayment,
 } from '@/lib/pi-payment';
 
-const NBF_PRO = { id: 'nbf-pro', name: 'NBF Pro (monthly)', price: 25 };
+const NBF_PRO = { id: 'nbf_pro_monthly', name: 'NBF Pro (monthly)', price: 25 };
 
 export default function NbfPro() {
   const [piReady, setPiReady] = useState(false);
@@ -67,7 +67,7 @@ export default function NbfPro() {
     if (!internalId) { setStatus('Could not start payment.'); return; }
 
     setStatus('Awaiting Pi approval…');
-    const result = await createU2APayment(price, name, { item_id: id }, internalId);
+    const result = await createU2APayment(price, name, { item_id: id, plan: 'PRO' }, internalId);
     setStatus(
       result.success ? `✅ Subscribed — txid ${result.txid}` :
       result.status === 'cancelled' ? 'Payment cancelled.' :
