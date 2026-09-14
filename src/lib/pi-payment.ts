@@ -36,7 +36,7 @@ export interface PaymentResult {
 // target — it produces `C_HUB_URL/hub` → 404 (the July 2026 System incident).
 // Accept a value ONLY if it's a real http(s) URL; else use the canonical Hub.
 import { hubPaymentOrigin, isHubReferrer } from '@/lib/pi-network';
-import { piSession } from '@/lib/pi/pi-session';
+import { piSession, setPiNotice } from '@/lib/pi/pi-session';
 
 const HUB_FALLBACK = 'https://hub.tecosystem.app';
 const HUB_URL = (() => {
@@ -145,7 +145,13 @@ export const createU2APayment = async (
     // two concurrent Pi.authenticate calls are what Pi Browser answers neither
     // of. See lib/pi/pi-session.ts.
     at('pi-signin', 'Signing in to Pi…');
-    if (!(await piSession.ensureAuth())) {
+    // Let the handshake speak while it runs. Pi announces an unfinished payment
+    // through the authenticate callback, and that announcement arrives during
+    // this wait — the one the screen is stuck on.
+    setPiNotice(onStage ?? null);
+    const authed = await piSession.ensureAuth();
+    setPiNotice(null);
+    if (!authed) {
       const why = piSession.lastAuthError;
       done({
         status: 'error', success: false,

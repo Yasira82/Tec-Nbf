@@ -37,9 +37,26 @@ const getCookie = (name: string): string =>
  * is this one for the whole page — an unfinished payment has to be resolvable
  * even when nobody has tapped Pay yet.
  */
+/**
+ * Say something when Pi reports an unfinished payment.
+ *
+ * Pi refuses to open a new payment while the user has one still open, and it
+ * announces that through this callback DURING the handshake — which is exactly
+ * the moment the screen is sitting on "Signing in to Pi…". Until now the whole
+ * exchange was silent: whether Pi found one at all, and whether clearing it
+ * worked, were both invisible. A stuck payment and an unreachable Pi produce
+ * the identical blank wait, and they need opposite responses.
+ *
+ * Set by the payment flow for the duration of a tap; null the rest of the time
+ * (the page-load warm-up has no screen to talk to).
+ */
+let notify: ((message: string) => void) | null = null;
+export const setPiNotice = (fn: ((message: string) => void) | null): void => { notify = fn; };
+
 const resolveIncomplete = async (incomplete: unknown): Promise<void> => {
   const pid = (incomplete as { identifier?: string } | null)?.identifier;
   if (!pid) return;
+  notify?.(`Pi found an unfinished payment (${pid.slice(0, 8)}…) — clearing it…`);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-csrf-token': getCookie('tec_csrf'),
@@ -47,11 +64,19 @@ const resolveIncomplete = async (incomplete: unknown): Promise<void> => {
   const token = getCookie('tec_access_token');
   if (token) headers['Authorization'] = `Bearer ${token}`;
   try {
-    await fetch('/api/bff/payment/resolve-incomplete', {
+    const res = await fetch('/api/bff/payment/resolve-incomplete', {
       method: 'POST', credentials: 'include', headers,
       body: JSON.stringify({ pi_payment_id: pid }),
     });
-  } catch { /* resolving is best-effort — it must never fail the payment */ }
+    // Still best-effort — it must never fail the payment — but no longer silent.
+    // An unfinished payment that cannot be cleared blocks every future payment,
+    // so it is the one thing the user most needs told.
+    notify?.(res.ok
+      ? 'Unfinished payment cleared — tap Renew again.'
+      : `Could not clear the unfinished payment (HTTP ${res.status}). Pi will keep refusing new payments until it clears.`);
+  } catch (err) {
+    notify?.(`Could not clear the unfinished payment: ${err instanceof Error ? err.message : String(err)}`);
+  }
 };
 
 let authenticated = false;
