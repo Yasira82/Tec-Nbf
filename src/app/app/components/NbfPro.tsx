@@ -66,8 +66,11 @@ export default function NbfPro() {
     const internalId = await createPaymentRecord(price, id, name);
     if (!internalId) { setStatus('Could not start payment.'); return; }
 
-    setStatus('Awaiting Pi approval…');
-    const result = await createU2APayment(price, name, { item_id: id, plan: 'PRO' }, internalId);
+    // Report each step. One label for the whole flow could not say which of
+    // the four waits a stuck payment was stuck in.
+    const result = await createU2APayment(
+      price, name, { item_id: id, plan: 'PRO' }, internalId, setStatus,
+    );
     setStatus(
       result.success ? `✅ Subscribed — txid ${result.txid}` :
       result.status === 'cancelled' ? 'Payment cancelled.' :
