@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { LocaleProvider } from '@/lib/i18n';
 import '@/styles/tec-design-tokens.css';
 import { ArrivalReport } from '@/components/pioneer/ArrivalReport';
+import { QuestReturn } from '@/components/pioneer/QuestReturn';
 
 export const metadata: Metadata = {
   title:       'TEC NBF — Business Foundation Runtime',
@@ -113,7 +114,7 @@ export default function RootLayout({
         />
       </head>
       <body><PiWarmup />
-        <ArrivalReport /><LocaleProvider>{children}</LocaleProvider></body>
+        <ArrivalReport /><QuestReturn /><LocaleProvider>{children}</LocaleProvider></body>
     </html>
   );
 }
