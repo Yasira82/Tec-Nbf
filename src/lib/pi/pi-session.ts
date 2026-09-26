@@ -81,6 +81,10 @@ const resolveIncomplete = async (incomplete: unknown): Promise<void> => {
 
 let authenticated = false;
 let inFlight: Promise<boolean> | null = null;
+// Pi's access token from the last handshake, in MEMORY only (ADR-001: never
+// localStorage/sessionStorage). It is what lets this app sign itself in when it
+// was opened without a TEC session — see self-sign-in.ts.
+let piAccessToken: string | null = null;
 
 /**
  * Why the last handshake did not succeed.
@@ -109,6 +113,11 @@ export const piSession = {
     return authenticated && PiRuntime.isAvailable();
   },
 
+  /** Pi's access token from the last successful handshake, or null. Memory only. */
+  get accessToken(): string | null {
+    return piAccessToken;
+  },
+
   /** True while a handshake is running (warm-up or tap). */
   get isAuthInFlight(): boolean {
     return inFlight !== null;
@@ -133,9 +142,16 @@ export const piSession = {
     if (!inFlight) {
       inFlight = PiRuntime
         .authenticate(['username', 'payments'], (p: unknown) => { void resolveIncomplete(p); })
-        .then(() => { authenticated = true;  lastError = null; return true;  })
+        .then((result: unknown) => {
+          const t = (result as { accessToken?: unknown } | null)?.accessToken;
+          piAccessToken = typeof t === 'string' && t ? t : null;
+          authenticated = true;
+          lastError     = null;
+          return true;
+        })
         .catch((err: unknown) => {
           authenticated = false;
+          piAccessToken = null;
           // Keep what Pi said. It is the only thing that separates "this app is
           // not registered for this host" from "the user declined" from "the
           // breaker is OPEN", and each wants a different fix.
@@ -168,5 +184,6 @@ export const piSession = {
   reset(): void {
     authenticated = false;
     inFlight      = null;
+    piAccessToken = null;
   },
 };
