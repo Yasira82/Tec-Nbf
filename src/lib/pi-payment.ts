@@ -107,6 +107,19 @@ export const createPaymentRecord = async (
   } catch { return null; }
 };
 
+/**
+ * Did this tab arrive through a signed handoff — the Hub grid, the campaign,
+ * the Quest? The SSO landing records it (sso-callback). Such a tab is the app's
+ * own Pi session (a new tab, no referrer), but Pi Browser does not answer the
+ * handshake nobody tapped for there: every grid-opened app timed out at Pro,
+ * and the same app opened from Pi's own list paid at once (owner, 2026-10-02).
+ */
+export const enteredByHandoff = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try { return window.sessionStorage.getItem('__tec_handoff_entry') === '1'; }
+  catch { return false; }
+};
+
 /** Step 2 — run the Pi User-to-App payment (Mode 2 / standalone in Pi Browser). */
 /**
  * `onStage` reports WHICH step is running.
@@ -149,7 +162,10 @@ export const createU2APayment = async (
     // through the authenticate callback, and that announcement arrives during
     // this wait — the one the screen is stuck on.
     setPiNotice(onStage ?? null);
-    const authed = await piSession.ensureAuth();
+    // In a tab opened through a signed handoff (enteredByHandoff) Pi Browser
+    // does not answer the load-time warm-up, and a tap that joined it hung to
+    // the 90 s timeout — there the tap starts its own handshake.
+    const authed = await piSession.ensureAuth({ fresh: enteredByHandoff() });
     setPiNotice(null);
     if (!authed) {
       const why = piSession.lastAuthError;

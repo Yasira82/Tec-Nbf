@@ -81,6 +81,7 @@ const resolveIncomplete = async (incomplete: unknown): Promise<void> => {
 
 let authenticated = false;
 let inFlight: Promise<boolean> | null = null;
+let generation = 0;
 // Pi's access token from the last handshake, in MEMORY only (ADR-001: never
 // localStorage/sessionStorage). It is what lets this app sign itself in when it
 // was opened without a TEC session — see self-sign-in.ts.
@@ -128,7 +129,16 @@ export const piSession = {
    * A tap arriving mid-warm-up joins the SAME promise — it never starts a
    * second concurrent authenticate.
    */
-  ensureAuth(): Promise<boolean> {
+  /**
+   * `fresh`: do not join a handshake already in flight — start one inside THIS
+   * call (a tap). For a tab opened through a signed handoff from the Hub: Pi
+   * Browser does not answer the load-time warm-up there, so a tap that joined it
+   * waited out the 90 s payment timeout with Pi silent — every grid-opened app,
+   * while the same app opened from Pi's own list paid at once (owner, phone,
+   * 2026-10-02). Ecommerce has always authenticated afresh at the tap, and paid
+   * from the grid the same day. (tec-template-base #45)
+   */
+  ensureAuth(opts: { fresh?: boolean } = {}): Promise<boolean> {
     if (this.isAuthenticated) { lastError = null; return Promise.resolve(true); }
     if (isForeignSession()) {
       lastError = 'this session belongs to the Hub (ADR-007) — pay from the Hub instead';
@@ -139,17 +149,21 @@ export const piSession = {
       return Promise.resolve(false);
     }
 
-    if (!inFlight) {
-      inFlight = PiRuntime
+    if (!inFlight || opts.fresh) {
+      // A superseded handshake (the warm-up a fresh tap stepped past) may still
+      // settle later; only the CURRENT one may write the outcome.
+      const gen = ++generation;
+      const call: Promise<boolean> = PiRuntime
         .authenticate(['username', 'payments'], (p: unknown) => { void resolveIncomplete(p); })
         .then((result: unknown) => {
           const t = (result as { accessToken?: unknown } | null)?.accessToken;
-          piAccessToken = typeof t === 'string' && t ? t : null;
-          authenticated = true;
+          if (typeof t === 'string' && t) piAccessToken = t;
+          authenticated = true;      // any answer from Pi is a live session
           lastError     = null;
           return true;
         })
         .catch((err: unknown) => {
+          if (gen !== generation) return false;
           authenticated = false;
           piAccessToken = null;
           // Keep what Pi said. It is the only thing that separates "this app is
@@ -158,7 +172,8 @@ export const piSession = {
           lastError = err instanceof Error ? err.message : String(err ?? 'unknown Pi error');
           return false;
         })
-        .finally(() => { inFlight = null; });
+        .finally(() => { if (inFlight === call) inFlight = null; });
+      inFlight = call;
     }
     return inFlight;
   },
@@ -185,5 +200,6 @@ export const piSession = {
     authenticated = false;
     inFlight      = null;
     piAccessToken = null;
+    generation++;
   },
 };
