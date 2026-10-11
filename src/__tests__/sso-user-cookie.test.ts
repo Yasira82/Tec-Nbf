@@ -23,7 +23,8 @@ import { GET } from '../app/api/auth/sso-callback/route';
 
 const SECRET = 'sso-secret-for-tests-at-least-32-chars!!';
 const ORIGIN = readFileSync(join(process.cwd(), 'src/app/api/auth/sso-callback/route.ts'), 'utf8')
-  .match(/ALLOWED_AUDIENCES = \[(?:\s*\/\/[^\n]*)*\s*'([^']+)'/)?.[1] as string;
+  // The first quoted origin after the declaration (comments before it hold none).
+  .split('ALLOWED_AUDIENCES = [')[1]?.match(/'(https:\/\/[^']+)'/)?.[1] as string;
 
 let saved: string | undefined;
 beforeEach(() => { saved = process.env.SSO_SECRET; process.env.SSO_SECRET = SECRET; });
