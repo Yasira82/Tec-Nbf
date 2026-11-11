@@ -112,7 +112,7 @@ export default function NbfHome() {
 
   return (
     <main style={{ minHeight: '100vh', background: TEC_COLORS.bg, color: '#e7e7ea', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 22px calc(96px + env(safe-area-inset-bottom))' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 22px calc(96px + max(env(safe-area-inset-bottom), var(--tec-safe-bottom-fallback, 0px)))' }}>
         <header style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 34 }}>🏢</div>
           <h1 style={{ color: TEC_COLORS.gold, margin: '4px 0 2px', fontSize: 26 }}>{headerTitle}</h1>

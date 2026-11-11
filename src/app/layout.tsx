@@ -5,6 +5,7 @@ import { LocaleProvider } from '@/lib/i18n';
 import '@/styles/tec-design-tokens.css';
 import { ArrivalReport } from '@/components/pioneer/ArrivalReport';
 import { QuestReturn } from '@/components/pioneer/QuestReturn';
+import { SAFE_BOTTOM_BOOT_SCRIPT } from '@/lib/safe-bottom';
 
 export const metadata: Metadata = {
   title:       'TEC NBF — Business Foundation Runtime',
@@ -19,6 +20,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Room under the bottom bar for Android's buttons when Pi Browser reports none (lib/safe-bottom). */}
+        <script dangerouslySetInnerHTML={{ __html: SAFE_BOTTOM_BOOT_SCRIPT }} />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         {/* Full-bleed dark shell — tint the browser UI + declare dark canvas so
             no white frame shows around the app in Pi Browser. */}

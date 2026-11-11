@@ -73,6 +73,8 @@ export const redirectToHubPayment = (params: {
     pay:    '1',
     source: APP_SOURCE,
     amount: String(params.amount),
+    // `product_id` is the name the Hub's Mode-1 contract reads (tec-app #257); `item` stays.
+    product_id: params.itemId,
     item:   params.itemId,
     // Where the Hub sends the user back — on Cancel AND on success. Omitting it
     // left the Hub defaulting to its OWN /hub, so cancelling a payment that
@@ -144,7 +146,7 @@ export const createU2APayment = async (
     let settled = false;
     const done = (result: PaymentResult) => { if (settled) return; settled = true; clearTimeout(timer); resolve(result); };
     const timer = setTimeout(
-      () => done({ status: 'error', success: false, message: `Timed out at: ${stage}. Nothing was charged — please try again.` }),
+      () => done({ status: 'error', success: false, message: `${PI_WALLET_DID_NOT_OPEN} Nothing was charged. (Stopped at: ${stage}.)` }),
       90_000,
     );
 
@@ -216,3 +218,11 @@ export const createU2APayment = async (
     }
   });
 };
+
+/**
+ * Shown when Pi never opened the wallet. After several Pi apps in one Pi
+ * Browser session Pi stops answering until the browser restarts (owner,
+ * 10 Nov 2026) — this names the one fix a person can do.
+ */
+export const PI_WALLET_DID_NOT_OPEN =
+  'The Pi wallet did not open. Close Pi Browser completely, open it again, and try once more.';

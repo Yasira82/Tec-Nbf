@@ -20,7 +20,7 @@ export function BottomNav({ active, onSelect }: { active: NbfTab; onSelect: (t: 
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
       background: 'rgba(5,8,22,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       borderTop: '1px solid rgba(255,255,255,0.06)',
-      display: 'flex', paddingBottom: 'env(safe-area-inset-bottom)',
+      display: 'flex', paddingBottom: 'max(env(safe-area-inset-bottom), var(--tec-safe-bottom-fallback, 0px))',
     }}>
       {ITEMS.map((item) => {
         const isActive = active === item.key;
