@@ -21,10 +21,11 @@ import { buildHeaders } from '@/lib/request-id';
 import NbfPro from './components/NbfPro';
 import { BottomNav, type NbfTab } from './components/BottomNav';
 import { SettingsView } from './components/SettingsView';
+import { SignInGate } from '@/components/pi/SignInGate';
 
 type Source = 'live' | 'empty' | 'sample' | 'loading';
 
-export default function NbfHome() {
+function NbfHome() {
   const { t } = useTranslation();
   const [tab, setTab] = useState<NbfTab>('home');
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
@@ -284,3 +285,10 @@ const primaryBtn = (disabled: boolean): React.CSSProperties => ({
   background: disabled ? '#ffffff1a' : TEC_COLORS.goldDark, color: disabled ? '#9ca3af' : '#050816',
   fontWeight: 800, fontSize: 13.5, width: '100%',
 });
+
+// The door: a sign-in button before any screen when there is no session
+// (SignInGate — C-123 §10; owner, 2026-10-06). A visit from the Hub arrives
+// signed in (§12) and goes straight through.
+export default function NbfHomeGated() {
+  return <SignInGate><NbfHome /></SignInGate>;
+}
