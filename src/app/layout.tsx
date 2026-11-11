@@ -1,6 +1,7 @@
 import { PiWarmup } from '@/components/pi/PiWarmup';
 import { HUB_HOSTS } from '@/lib/pi-network';
 import type { Metadata } from 'next';
+import { APP_META } from '@/lib/app-meta';
 import { LocaleProvider } from '@/lib/i18n';
 import '@/styles/tec-design-tokens.css';
 import { ArrivalReport } from '@/components/pioneer/ArrivalReport';
@@ -10,6 +11,9 @@ import { SAFE_BOTTOM_BOOT_SCRIPT } from '@/lib/safe-bottom';
 export const metadata: Metadata = {
   title:       'TEC NBF — Business Foundation Runtime',
   description: 'TEC NBF — establish and verify your Pi business identity in 25 minutes (read-only preview).',
+  // The share card (Open Graph) and the installable manifest read lib/app-meta (E11).
+  openGraph:   { title: APP_META.name, description: APP_META.description, siteName: APP_META.name, type: 'website' },
+  twitter:     { card: 'summary', title: APP_META.name, description: APP_META.description },
 };
 
 export default function RootLayout({
