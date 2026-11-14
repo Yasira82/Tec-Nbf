@@ -25,10 +25,15 @@ export function CancelProButton({ onCancelled }: { onCancelled?: () => void } = 
     fetch('/api/bff/subscription', { credentials: 'include', cache: 'no-store' })
       .then((r) => r.json()).catch(() => ({}))
       .then((j: Record<string, unknown>) => {
+        // Two shapes reach this button: the template's route answers the resolver's
+        // ProState (`pro`, flat); an app whose route forwards commerce answers the
+        // raw envelope (`isActive`, nested). Reading only `isActive` hid the button
+        // for EVERY app built from this template — it never rendered here at all.
         const d = ((j?.data ?? j) ?? {}) as Record<string, unknown>;
         const s = ((d.subscription ?? d) ?? {}) as Record<string, unknown>;
-        const plan = String(s.plan ?? '').toUpperCase();
-        setShow(s.isActive === true && plan !== 'FREE' && s.legacy !== true && s.testnet !== true);
+        const plan   = String(s.plan ?? '').toUpperCase();
+        const active = s.isActive === true || s.pro === true;
+        setShow(active && plan !== 'FREE' && s.legacy !== true && s.testnet !== true);
       })
       .catch(() => {});
   }, []);
@@ -65,13 +70,13 @@ export function CancelProButton({ onCancelled }: { onCancelled?: () => void } = 
         disabled={busy}
         style={{
           padding: '8px 14px', borderRadius: 10, cursor: busy ? 'default' : 'pointer',
-          background: 'transparent', border: '1px solid rgba(239,68,68,0.55)', color: '#ef4444',
+          background: 'transparent', border: '1px solid rgba(239,68,68,0.55)', color: 'var(--tec-red)',
           fontSize: 12, fontWeight: 700,
         }}
       >
         {busy ? 'Cancelling…' : 'Cancel subscription'}
       </button>
-      {error && <div role="alert" style={{ fontSize: 11, color: '#ef4444', marginTop: 6 }}>{error}</div>}
+      {error && <div role="alert" style={{ fontSize: 11, color: 'var(--tec-red)', marginTop: 6 }}>{error}</div>}
     </div>
   );
 }
