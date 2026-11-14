@@ -2,6 +2,7 @@ import {
   SAMPLE_BUSINESS, isTitanReady,
   type BusinessProfile, type BusinessType, type BusinessStatus,
 } from './business';
+import { gatewayFetch } from '@/lib/gateway-fetch';
 
 // Server-only NBF backend access (C-124). Talks to the real NBF module
 // (tec-identity-service) through the gateway. READS serve the caller's OWN
@@ -60,7 +61,7 @@ export interface ResolvedBusiness {
 export async function resolveOwnBusiness(owner: string | null): Promise<ResolvedBusiness> {
   if (GW && owner) {
     try {
-      const res = await fetch(
+      const res = await gatewayFetch(
         `${GW}/api/identity/nbf/business/by-owner/${encodeURIComponent(owner)}`,
         { headers: gwHeaders(), cache: 'no-store' },
       );
@@ -90,7 +91,7 @@ export async function createBusinessBackend(
 ): Promise<WriteResult> {
   if (!GW) return { ok: false, status: 503, error: 'Gateway not configured' };
   try {
-    const res = await fetch(`${GW}/api/identity/nbf/business`, {
+    const res = await gatewayFetch(`${GW}/api/identity/nbf/business`, {
       method:  'POST',
       headers: gwHeaders(token),
       body:    JSON.stringify(dto),   // name/type/tagline only — owner comes from the token
@@ -111,7 +112,7 @@ export async function createBusinessBackend(
 export async function publishBusinessBackend(token: string, handle: string): Promise<WriteResult> {
   if (!GW) return { ok: false, status: 503, error: 'Gateway not configured' };
   try {
-    const res = await fetch(
+    const res = await gatewayFetch(
       `${GW}/api/identity/nbf/business/${encodeURIComponent(handle)}/publish`,
       { method: 'PATCH', headers: gwHeaders(token), cache: 'no-store' },
     );

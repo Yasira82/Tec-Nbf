@@ -8,6 +8,7 @@ import { usePiAuth } from '@yasser172/tec-auth';
 import { TEC_COLORS } from '@yasser172/tec-ui';
 import { useTranslation } from '@/lib/i18n';
 import { useMe } from '@/lib-client/hooks/useMe';
+import { readProState } from '@/lib/subscription/read-pro-state';
 
 const cardStyle = {
   background: TEC_COLORS.surface, border: `1px solid ${TEC_COLORS.border}`, borderRadius: 16,
@@ -77,11 +78,8 @@ export function SettingsView() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!alive || !d) return;
-        const outer = (d?.data ?? d) as Record<string, unknown>;
-        const sub = ((outer?.subscription ?? outer) ?? {}) as Record<string, unknown>;
-        const plan = String(sub.plan ?? '').toUpperCase();
-        const active = sub.isActive === true || sub.status === 'ACTIVE';
-        if (active && plan && plan !== 'FREE') setIsPro(true);
+        // One reading, fail-closed — the same as the server's (TEC-AUDIT-0044).
+        if (readProState(d).pro) setIsPro(true);
       })
       .catch(() => { /* fail closed to Free */ });
     return () => { alive = false; };

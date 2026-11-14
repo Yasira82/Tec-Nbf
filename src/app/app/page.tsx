@@ -21,10 +21,11 @@ import { buildHeaders } from '@/lib/request-id';
 import NbfPro from './components/NbfPro';
 import { BottomNav, type NbfTab } from './components/BottomNav';
 import { SettingsView } from './components/SettingsView';
+import { SignInGate } from '@/components/pi/SignInGate';
 
 type Source = 'live' | 'empty' | 'sample' | 'loading';
 
-export default function NbfHome() {
+function NbfHome() {
   const { t } = useTranslation();
   const [tab, setTab] = useState<NbfTab>('home');
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
@@ -112,7 +113,7 @@ export default function NbfHome() {
 
   return (
     <main style={{ minHeight: '100vh', background: TEC_COLORS.bg, color: '#e7e7ea', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 22px calc(96px + env(safe-area-inset-bottom))' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 22px calc(96px + max(env(safe-area-inset-bottom), var(--tec-safe-bottom-fallback, 0px)))' }}>
         <header style={{ marginBottom: 8 }}>
           <div style={{ fontSize: 34 }}>🏢</div>
           <h1 style={{ color: TEC_COLORS.gold, margin: '4px 0 2px', fontSize: 26 }}>{headerTitle}</h1>
@@ -284,3 +285,10 @@ const primaryBtn = (disabled: boolean): React.CSSProperties => ({
   background: disabled ? '#ffffff1a' : TEC_COLORS.goldDark, color: disabled ? '#9ca3af' : '#050816',
   fontWeight: 800, fontSize: 13.5, width: '100%',
 });
+
+// The door: a sign-in button before any screen when there is no session
+// (SignInGate — C-123 §10; owner, 2026-10-06). A visit from the Hub arrives
+// signed in (§12) and goes straight through.
+export default function NbfHomeGated() {
+  return <SignInGate><NbfHome /></SignInGate>;
+}

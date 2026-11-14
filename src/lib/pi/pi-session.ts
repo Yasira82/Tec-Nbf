@@ -26,6 +26,7 @@
 //   2. Never authenticate in a Hub-owned session (ADR-007). It never answers.
 
 import { PiRuntime } from './PiRuntime';
+import { writeTrace, SIGNIN_TRACE } from '@/lib/pioneer/arrival-trace';
 
 const getCookie = (name: string): string =>
   typeof document === 'undefined' ? '' :
@@ -96,6 +97,8 @@ let generation = 0;
 // localStorage/sessionStorage). It is what lets this app sign itself in when it
 // was opened without a TEC session — see self-sign-in.ts.
 let piAccessToken: string | null = null;
+// The Pi username from the last handshake, memory only — for lib/pi/counted-once.
+let piUser: string | null = null;
 
 /**
  * Why the last handshake did not succeed.
@@ -129,6 +132,11 @@ export const piSession = {
     return piAccessToken;
   },
 
+  /** The Pi username from the last successful handshake, or null. Memory only. */
+  get username(): string | null {
+    return piUser;
+  },
+
   /** True while a handshake is running (warm-up or tap). */
   get isAuthInFlight(): boolean {
     return inFlight !== null;
@@ -150,11 +158,15 @@ export const piSession = {
    */
   ensureAuth(opts: { fresh?: boolean } = {}): Promise<boolean> {
     if (this.isAuthenticated) { lastError = null; return Promise.resolve(true); }
+    // Each outcome is written for /pi-test (lib/pioneer/arrival-trace): when a
+    // campaign mission stays unticked, the phone shows which step stopped.
     if (isForeignSession()) {
+      writeTrace(SIGNIN_TRACE, { result: 'foreign-session' });
       lastError = 'this session belongs to the Hub (ADR-007) — pay from the Hub instead';
       return Promise.resolve(false);
     }
     if (!PiRuntime.isAvailable()) {
+      writeTrace(SIGNIN_TRACE, { result: 'no-sdk' });
       lastError = 'the Pi SDK is not present on this page';
       return Promise.resolve(false);
     }
@@ -168,12 +180,16 @@ export const piSession = {
         .then((result: unknown) => {
           const t = (result as { accessToken?: unknown } | null)?.accessToken;
           if (typeof t === 'string' && t) piAccessToken = t;
+          const u = (result as { user?: { username?: unknown } } | null)?.user?.username;
+          if (typeof u === 'string' && u) piUser = u;
           authenticated = true;      // any answer from Pi is a live session
+          writeTrace(SIGNIN_TRACE, { result: 'ok' });
           lastError     = null;
           announceSignedIn();
           return true;
         })
         .catch((err: unknown) => {
+          writeTrace(SIGNIN_TRACE, { result: 'error', error: String((err as Error)?.message ?? err).slice(0, 200) });
           if (gen !== generation) return false;
           authenticated = false;
           piAccessToken = null;
@@ -213,6 +229,16 @@ export const piSession = {
   /** Fire-and-forget warm-up. Failure is silent: the tap will simply retry. */
   warm(): void {
     void this.ensureAuth();
+  },
+
+  /**
+   * A visitor Pi already signed in HERE on this device (lib/pi/counted-once):
+   * announce the visit so ArrivalReport still reports it and a Round 3 mission
+   * ticks — WITHOUT a handshake and without marking this page authenticated, so
+   * a Pay tap still authenticates first, as Pi requires before createPayment.
+   */
+  announceCountedVisit(): void {
+    announceSignedIn();
   },
 
   /**

@@ -1,14 +1,19 @@
 import { PiWarmup } from '@/components/pi/PiWarmup';
 import { HUB_HOSTS } from '@/lib/pi-network';
 import type { Metadata } from 'next';
+import { APP_META } from '@/lib/app-meta';
 import { LocaleProvider } from '@/lib/i18n';
 import '@/styles/tec-design-tokens.css';
 import { ArrivalReport } from '@/components/pioneer/ArrivalReport';
 import { QuestReturn } from '@/components/pioneer/QuestReturn';
+import { SAFE_BOTTOM_BOOT_SCRIPT } from '@/lib/safe-bottom';
 
 export const metadata: Metadata = {
   title:       'TEC NBF — Business Foundation Runtime',
   description: 'TEC NBF — establish and verify your Pi business identity in 25 minutes (read-only preview).',
+  // The share card (Open Graph) and the installable manifest read lib/app-meta (E11).
+  openGraph:   { title: APP_META.name, description: APP_META.description, siteName: APP_META.name, type: 'website' },
+  twitter:     { card: 'summary', title: APP_META.name, description: APP_META.description },
 };
 
 export default function RootLayout({
@@ -19,6 +24,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Room under the bottom bar for Android's buttons when Pi Browser reports none (lib/safe-bottom). */}
+        <script dangerouslySetInnerHTML={{ __html: SAFE_BOTTOM_BOOT_SCRIPT }} />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         {/* Full-bleed dark shell — tint the browser UI + declare dark canvas so
             no white frame shows around the app in Pi Browser. */}

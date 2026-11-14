@@ -37,6 +37,7 @@ export interface PaymentResult {
 // Accept a value ONLY if it's a real http(s) URL; else use the canonical Hub.
 import { hubPaymentOrigin, isHubReferrer } from '@/lib/pi-network';
 import { piSession, setPiNotice } from '@/lib/pi/pi-session';
+import { PiRuntime } from '@/lib/pi/PiRuntime';
 
 const HUB_FALLBACK = 'https://hub.tecosystem.app';
 const HUB_URL = (() => {
@@ -73,6 +74,8 @@ export const redirectToHubPayment = (params: {
     pay:    '1',
     source: APP_SOURCE,
     amount: String(params.amount),
+    // `product_id` is the name the Hub's Mode-1 contract reads (tec-app #257); `item` stays.
+    product_id: params.itemId,
     item:   params.itemId,
     // Where the Hub sends the user back — on Cancel AND on success. Omitting it
     // left the Hub defaulting to its OWN /hub, so cancelling a payment that
@@ -138,13 +141,13 @@ export const createU2APayment = async (
   return new Promise(async (resolve) => {
     let stage = 'starting';
     const at = (s: string, label: string) => { stage = s; onStage?.(label); };
-    if (!window.Pi) { resolve({ status: 'error', success: false, message: 'Pi SDK not ready' }); return; }
+    if (!PiRuntime.isAvailable()) { resolve({ status: 'error', success: false, message: 'Pi SDK not ready' }); return; }
     if ((window as any).__TEC_PI_FOREIGN_SESSION) { resolve({ status: 'error', success: false, message: 'foreign_session' }); return; }
 
     let settled = false;
     const done = (result: PaymentResult) => { if (settled) return; settled = true; clearTimeout(timer); resolve(result); };
     const timer = setTimeout(
-      () => done({ status: 'error', success: false, message: `Timed out at: ${stage}. Nothing was charged — please try again.` }),
+      () => done({ status: 'error', success: false, message: `${PI_WALLET_DID_NOT_OPEN} Nothing was charged. (Stopped at: ${stage}.)` }),
       90_000,
     );
 
@@ -178,7 +181,8 @@ export const createU2APayment = async (
 
     at('pi-wallet', 'Opening the Pi wallet…');
     try {
-      window.Pi.createPayment(
+      // Through the PAL (R1) — TEC-AUDIT-0011.
+      PiRuntime.createPayment(
         { amount, memo, metadata: { ...metadata, internalId } },
         {
           onReadyForServerApproval: async (piPaymentId: string) => {
@@ -216,3 +220,11 @@ export const createU2APayment = async (
     }
   });
 };
+
+/**
+ * Shown when Pi never opened the wallet. After several Pi apps in one Pi
+ * Browser session Pi stops answering until the browser restarts (owner,
+ * 10 Nov 2026) — this names the one fix a person can do.
+ */
+export const PI_WALLET_DID_NOT_OPEN =
+  'The Pi wallet did not open. Close Pi Browser completely, open it again, and try once more.';
