@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { APP_SOURCE }     from '@/lib/app-source';
+import { APP_SOURCE } from '@/lib/app-source';
 import { networkMetadata } from '@/lib/pi-network';
 import { gatewayFetch } from '@/lib/gateway-fetch';
 
@@ -41,13 +41,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'VALIDATION_ERROR', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  // `testnet` is derived from the REQUEST HOST below, never accepted from
-  // the caller — a client-set network flag is a client-controlled claim
-  // about which Pi network to charge on. It is REMOVED here rather than
-  // merely overwritten: on a Mainnet host networkMetadata() returns {},
-  // so an overwrite is no overwrite at all and the claim would survive.
-  const { amount, memo, metadata: clientMetadata } = parsed.data;
-  const { testnet: _clientTestnet, ...metadata } = clientMetadata ?? {};
+  const { amount, memo } = parsed.data;
+  // Dropped before the spread, not just overwritten by it: a later edit that
+  // reorders the object must not quietly hand the network back to the caller.
+  const { testnet: _clientTestnet, ...metadata } = parsed.data.metadata ?? {};
 
   const gwHeaders: Record<string, string> = {
     'Content-Type':    'application/json',
@@ -66,8 +63,12 @@ export async function POST(req: NextRequest) {
         currency:       'PI',
         payment_method: 'pi',
         memo,
-        // Present only when true, so a Mainnet payment carries no such key
-        // and its payload is byte-identical to what it has always been.
+        // `source` and `testnet` are set HERE and overwrite whatever the body
+        // carried. Both decide how payment-service approves this payment — which
+        // Pi API key, and which Pi network — and a client that could name either
+        // could pay with Test-Pi and have a consumer grant it something real.
+        // The network comes from this request's own Host: the Mainnet app and
+        // its paired Testnet app are the same deployment on two hosts.
         metadata:       { ...metadata, source: APP_SOURCE, ...networkMetadata(req.headers.get('host')) },
       }),
     });
