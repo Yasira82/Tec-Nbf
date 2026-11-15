@@ -1,4 +1,10 @@
 'use client';
+
+// Server-resolved session identity (C-123 §3). The client must NOT decide "who am I?"
+// from document.cookie — Pi Browser stores the tec_user cookie so the SERVER sees it
+// while hiding it from client JS, so getStoredUser()/usePiAuth() read null and the real
+// Pi username never appears. /api/auth/me reads the request cookie server-side and
+// returns the actual user. Fail closed (P6).
 import { useEffect, useState } from 'react';
 
 interface Me {
@@ -19,11 +25,9 @@ interface Me {
   reason: string | null;
 }
 
-// Resolve the real Pi login username via the server (/api/auth/me). Pi Browser
-// hides the tec_user cookie from client JS (C-123 §3), so usePiAuth alone shows
-// no name — the BFF reads the HttpOnly cookie server-side. Fails closed (P6).
 export function useMe(): Me {
   const [me, setMe] = useState<Me>({ username: null, authenticated: false, loading: true, reason: null });
+
   useEffect(() => {
     let alive = true;
     fetch('/api/auth/me', { credentials: 'include', cache: 'no-store' })
@@ -43,5 +47,6 @@ export function useMe(): Me {
       .catch(() => { if (alive) setMe((p) => ({ ...p, loading: false, reason: 'network' })); });
     return () => { alive = false; };
   }, []);
+
   return me;
 }

@@ -2,6 +2,10 @@ import { defineConfig } from 'vitest/config';
 import path             from 'path';
 
 export default defineConfig({
+  // The automatic JSX runtime — the one Next.js compiles components with. Without
+  // it a component that (rightly) does not import React fails here with "React is
+  // not defined" (SignInGate, from the template).
+  esbuild: { jsx: 'automatic' },
   test: {
     environment: 'happy-dom',
     include:     ['src/**/*.{test,spec}.{ts,tsx}'],

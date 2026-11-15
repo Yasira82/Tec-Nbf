@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { readProState } from '@/lib/subscription/read-pro-state';
 
 /**
  * Cancel THIS app's Pro — and only this app's (owner decision, 2026-10-02: each
@@ -23,12 +24,12 @@ export function CancelProButton({ onCancelled }: { onCancelled?: () => void } = 
 
   useEffect(() => {
     fetch('/api/bff/subscription', { credentials: 'include', cache: 'no-store' })
-      .then((r) => r.json()).catch(() => ({}))
-      .then((j: Record<string, unknown>) => {
-        const d = ((j?.data ?? j) ?? {}) as Record<string, unknown>;
-        const s = ((d.subscription ?? d) ?? {}) as Record<string, unknown>;
-        const plan = String(s.plan ?? '').toUpperCase();
-        setShow(s.isActive === true && plan !== 'FREE' && s.legacy !== true && s.testnet !== true);
+      .then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      .then((j: unknown) => {
+        // Both shapes (this app's flat route, commerce's envelope) are read by the one
+        // reader, fail-closed — the screens and the server answer the same (TEC-AUDIT-0044).
+        const st = readProState(j);
+        setShow(st.pro && !st.legacy && !st.testnet);
       })
       .catch(() => {});
   }, []);
@@ -65,13 +66,13 @@ export function CancelProButton({ onCancelled }: { onCancelled?: () => void } = 
         disabled={busy}
         style={{
           padding: '8px 14px', borderRadius: 10, cursor: busy ? 'default' : 'pointer',
-          background: 'transparent', border: '1px solid rgba(239,68,68,0.55)', color: '#ef4444',
+          background: 'transparent', border: '1px solid rgba(239,68,68,0.55)', color: 'var(--tec-red)',
           fontSize: 12, fontWeight: 700,
         }}
       >
         {busy ? 'Cancelling…' : 'Cancel subscription'}
       </button>
-      {error && <div role="alert" style={{ fontSize: 11, color: '#ef4444', marginTop: 6 }}>{error}</div>}
+      {error && <div role="alert" style={{ fontSize: 11, color: 'var(--tec-red)', marginTop: 6 }}>{error}</div>}
     </div>
   );
 }
