@@ -26,6 +26,7 @@
 //   2. Never authenticate in a Hub-owned session (ADR-007). It never answers.
 
 import { PiRuntime } from './PiRuntime';
+import { writeTrace, SIGNIN_TRACE } from '@/lib/pioneer/arrival-trace';
 
 const getCookie = (name: string): string =>
   typeof document === 'undefined' ? '' :
@@ -150,11 +151,15 @@ export const piSession = {
    */
   ensureAuth(opts: { fresh?: boolean } = {}): Promise<boolean> {
     if (this.isAuthenticated) { lastError = null; return Promise.resolve(true); }
+    // Each outcome is written for /pi-test (lib/pioneer/arrival-trace): when a
+    // campaign mission stays unticked, the phone shows which step stopped.
     if (isForeignSession()) {
+      writeTrace(SIGNIN_TRACE, { result: 'foreign-session' });
       lastError = 'this session belongs to the Hub (ADR-007) — pay from the Hub instead';
       return Promise.resolve(false);
     }
     if (!PiRuntime.isAvailable()) {
+      writeTrace(SIGNIN_TRACE, { result: 'no-sdk' });
       lastError = 'the Pi SDK is not present on this page';
       return Promise.resolve(false);
     }
@@ -169,11 +174,13 @@ export const piSession = {
           const t = (result as { accessToken?: unknown } | null)?.accessToken;
           if (typeof t === 'string' && t) piAccessToken = t;
           authenticated = true;      // any answer from Pi is a live session
+          writeTrace(SIGNIN_TRACE, { result: 'ok' });
           lastError     = null;
           announceSignedIn();
           return true;
         })
         .catch((err: unknown) => {
+          writeTrace(SIGNIN_TRACE, { result: 'error', error: String((err as Error)?.message ?? err).slice(0, 200) });
           if (gen !== generation) return false;
           authenticated = false;
           piAccessToken = null;
