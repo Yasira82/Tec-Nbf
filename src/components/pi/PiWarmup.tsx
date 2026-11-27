@@ -14,6 +14,7 @@
 import { useEffect } from 'react';
 import { piSession } from '@/lib/pi/pi-session';
 import { selfSignIn } from '@/lib/pi/self-sign-in';
+import { looksLikePiBrowser } from '@/lib/pi/pi-browser';
 
 export function PiWarmup() {
   useEffect(() => {
@@ -26,6 +27,9 @@ export function PiWarmup() {
     // never answers there, and calling it poisons the Hub's own modal.
     const warm = () => {
       if (w.__TEC_PI_FOREIGN_SESSION === true) return;
+      // PiNet: outside Pi Browser, Pi.authenticate ends the visit (lib/pi/pi-browser.ts). The visitor
+      // looks around first; signing in waits for their tap.
+      if (!looksLikePiBrowser()) return;
       piSession.warm();
       // A standalone visit (the Quest, the campaign, Pi Browser's own app list)
       // arrives with no session of its own. The handshake just started is what
